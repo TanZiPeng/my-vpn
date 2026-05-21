@@ -4,4 +4,4 @@ pages_build_output_dir = "dist"
 
 [[kv_namespaces]]
 binding = "VPN_CONFIGS"
-id = "YOUR_KV_NAMESPACE_ID"
+id = "ae7a61f98a8c4a72be6935c56ddeb0ec"
