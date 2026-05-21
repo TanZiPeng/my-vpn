@@ -10,11 +10,15 @@
                 <stop offset="1" stop-color="#a78bfa"/>
               </linearGradient>
             </defs>
-            <circle cx="17" cy="17" r="7" stroke="url(#lg)" stroke-width="1.8" fill="none"/>
-            <circle cx="17" cy="17" r="13" stroke="url(#lg)" stroke-width="1.2" fill="none" stroke-dasharray="3.5 4" opacity="0.45"/>
-            <path d="M17 4v4M17 26v4M4 17h4M26 17h4" stroke="url(#lg)" stroke-width="1.3" stroke-linecap="round" opacity="0.35"/>
-            <path d="M7.5 7.5l3 3M23.5 23.5l3 3M23.5 7.5l3-3M7.5 23.5l-3 3" stroke="url(#lg)" stroke-width="1.1" stroke-linecap="round" opacity="0.2"/>
-            <circle cx="17" cy="17" r="2.2" fill="url(#lg)"/>
+            <polygon points="17,3 30,10.5 30,23.5 17,31 4,23.5 4,10.5" stroke="url(#lg)" stroke-width="1.6" fill="none" stroke-linejoin="round"/>
+            <polygon points="17,9 24,13 24,21 17,25 10,21 10,13" stroke="url(#lg)" stroke-width="1.4" fill="none" stroke-linejoin="round" opacity="0.45"/>
+            <line x1="17" y1="3" x2="17" y2="9" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
+            <line x1="30" y1="10.5" x2="24" y2="13" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
+            <line x1="30" y1="23.5" x2="24" y2="21" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
+            <line x1="17" y1="31" x2="17" y2="25" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
+            <line x1="4" y1="23.5" x2="10" y2="21" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
+            <line x1="4" y1="10.5" x2="10" y2="13" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
+            <circle cx="17" cy="17" r="2" fill="url(#lg)"/>
           </svg>
         </div>
         <div>

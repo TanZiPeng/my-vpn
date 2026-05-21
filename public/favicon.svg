@@ -1,4 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <rect width="32" height="32" rx="6" fill="#333"/>
-  <path d="M8 16l4 4 8-8" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 34 34" fill="none">
+  <defs>
+    <linearGradient id="lg" x1="0" y1="0" x2="34" y2="34">
+      <stop stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#a78bfa"/>
+    </linearGradient>
+  </defs>
+  <polygon points="17,3 30,10.5 30,23.5 17,31 4,23.5 4,10.5" stroke="url(#lg)" stroke-width="1.6" fill="none" stroke-linejoin="round"/>
+  <polygon points="17,9 24,13 24,21 17,25 10,21 10,13" stroke="url(#lg)" stroke-width="1.4" fill="none" stroke-linejoin="round" opacity="0.45"/>
+  <line x1="17" y1="3" x2="17" y2="9" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
+  <line x1="30" y1="10.5" x2="24" y2="13" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
+  <line x1="30" y1="23.5" x2="24" y2="21" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
+  <line x1="17" y1="31" x2="17" y2="25" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
+  <line x1="4" y1="23.5" x2="10" y2="21" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
+  <line x1="4" y1="10.5" x2="10" y2="13" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
+  <circle cx="17" cy="17" r="2" fill="url(#lg)"/>
 </svg>

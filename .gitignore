@@ -1,5 +1,8 @@
 node_modules
 dist
 dev-uploads
+.order.json
 .DS_Store
+Thumbs.db
 *.local
+*.log
