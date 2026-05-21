@@ -73,6 +73,13 @@
       @uploaded="onUploaded"
     />
 
+    <ConfirmDialog
+      :visible="!!deleteTarget"
+      :name="deleteTarget"
+      @confirm="confirmDelete"
+      @cancel="deleteTarget = null"
+    />
+
     <div class="toast-container">
       <div
         v-for="(t, i) in toasts"
@@ -89,6 +96,7 @@ import { ref, onMounted } from 'vue'
 import AppHeader from './components/AppHeader.vue'
 import ConfigCard from './components/ConfigCard.vue'
 import UploadDialog from './components/UploadDialog.vue'
+import ConfirmDialog from './components/ConfirmDialog.vue'
 import { useDragSort } from './composables/useDragSort.js'
 
 const configs = ref([])
@@ -96,6 +104,7 @@ const loading = ref(true)
 const showUpload = ref(false)
 const toasts = ref([])
 const hasDragged = ref(false)
+const deleteTarget = ref(null)
 
 const { dragIndex, isDragging, startDrag: _startDrag } = useDragSort(configs, {
   onOrderChange: persistOrder,
@@ -139,7 +148,12 @@ async function persistOrder() {
 }
 
 async function deleteConfig(name) {
-  if (!confirm(`Delete "${name}"?`)) return
+  deleteTarget.value = name
+}
+
+async function confirmDelete() {
+  const name = deleteTarget.value
+  deleteTarget.value = null
   try {
     const res = await fetch(`/api/configs/${encodeURIComponent(name)}`, { method: 'DELETE' })
     if (!res.ok) throw new Error('Failed to delete')
