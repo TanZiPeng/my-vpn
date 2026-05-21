@@ -78,7 +78,13 @@ app.get('/api/download/:name', (req, res) => {
   res.send(readFileSync(filePath))
 })
 
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Tanzipengshidashuaige'
+
 app.delete('/api/configs/:name', (req, res) => {
+  const auth = req.headers['x-admin-password']
+  if (auth !== ADMIN_PASSWORD) {
+    return res.status(403).json({ error: 'Wrong password' })
+  }
   const name = req.params.name
   const filePath = join(UPLOAD_DIR, name)
   if (existsSync(filePath)) unlinkSync(filePath)

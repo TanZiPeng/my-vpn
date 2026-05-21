@@ -11,10 +11,19 @@
             </svg>
           </div>
           <h3 class="confirm-title">Delete Config</h3>
-          <p class="confirm-desc">Are you sure you want to delete <strong>{{ name }}</strong>? This action cannot be undone.</p>
+          <p class="confirm-desc">Are you sure you want to delete <strong>{{ name }}</strong>?</p>
+          <input
+            ref="passInput"
+            v-model="password"
+            type="password"
+            class="confirm-pass"
+            placeholder="Enter admin password"
+            @keyup.enter="confirm"
+          />
+          <p v-if="error" class="confirm-error">{{ error }}</p>
           <div class="confirm-actions">
             <button class="btn-cancel" @click="cancel">Cancel</button>
-            <button class="btn-delete" @click="confirm">Delete</button>
+            <button class="btn-delete" :disabled="!password" @click="confirm">Delete</button>
           </div>
         </div>
       </div>
@@ -23,15 +32,41 @@
 </template>
 
 <script setup>
-defineProps({
+import { ref, watch, nextTick } from 'vue'
+
+const props = defineProps({
   visible: Boolean,
   name: String,
 })
 
 const emit = defineEmits(['confirm', 'cancel'])
 
-function confirm() { emit('confirm') }
-function cancel() { emit('cancel') }
+const password = ref('')
+const error = ref('')
+const passInput = ref(null)
+
+watch(() => props.visible, (v) => {
+  if (v) {
+    password.value = ''
+    error.value = ''
+    nextTick(() => passInput.value?.focus())
+  }
+})
+
+function confirm() {
+  if (!password.value) return
+  emit('confirm', password.value)
+}
+
+function cancel() {
+  emit('cancel')
+}
+
+function showError(msg) {
+  error.value = msg
+}
+
+defineExpose({ showError })
 </script>
 
 <style scoped>
@@ -92,6 +127,27 @@ function cancel() { emit('cancel') }
 .confirm-desc strong {
   color: var(--text);
   font-weight: 600;
+}
+
+.confirm-pass {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 13.5px;
+  outline: none;
+  transition: border-color 0.2s;
+  margin-bottom: 6px;
+}
+
+.confirm-pass:focus {
+  border-color: #6366f1;
+}
+
+.confirm-error {
+  font-size: 12px;
+  color: #ef4444;
+  margin-bottom: 4px;
 }
 
 .confirm-actions {

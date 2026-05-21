@@ -74,6 +74,7 @@
     />
 
     <ConfirmDialog
+      ref="confirmRef"
       :visible="!!deleteTarget"
       :name="deleteTarget"
       @confirm="confirmDelete"
@@ -151,16 +152,26 @@ async function deleteConfig(name) {
   deleteTarget.value = name
 }
 
-async function confirmDelete() {
+const confirmRef = ref(null)
+
+async function confirmDelete(password) {
   const name = deleteTarget.value
-  deleteTarget.value = null
   try {
-    const res = await fetch(`/api/configs/${encodeURIComponent(name)}`, { method: 'DELETE' })
+    const res = await fetch(`/api/configs/${encodeURIComponent(name)}`, {
+      method: 'DELETE',
+      headers: { 'X-Admin-Password': password }
+    })
+    if (res.status === 403) {
+      confirmRef.value?.showError('Password incorrect')
+      return
+    }
     if (!res.ok) throw new Error('Failed to delete')
+    deleteTarget.value = null
     configs.value = configs.value.filter(c => c.name !== name)
     toast('Config deleted')
   } catch {
     toast('Failed to delete config', true)
+    deleteTarget.value = null
   }
 }
 
