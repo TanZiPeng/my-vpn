@@ -10,14 +10,14 @@
                 <stop offset="1" stop-color="#a78bfa"/>
               </linearGradient>
             </defs>
-            <polygon points="17,3 30,10.5 30,23.5 17,31 4,23.5 4,10.5" stroke="url(#lg)" stroke-width="1.6" fill="none" stroke-linejoin="round"/>
-            <polygon points="17,9 24,13 24,21 17,25 10,21 10,13" stroke="url(#lg)" stroke-width="1.4" fill="none" stroke-linejoin="round" opacity="0.45"/>
-            <line x1="17" y1="3" x2="17" y2="9" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
-            <line x1="30" y1="10.5" x2="24" y2="13" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
-            <line x1="30" y1="23.5" x2="24" y2="21" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
-            <line x1="17" y1="31" x2="17" y2="25" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
-            <line x1="4" y1="23.5" x2="10" y2="21" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
-            <line x1="4" y1="10.5" x2="10" y2="13" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
+            <polygon points="17,2 29.5,9.5 29.5,24.5 17,32 4.5,24.5 4.5,9.5" stroke="url(#lg)" stroke-width="1.6" fill="none" stroke-linejoin="round"/>
+            <polygon points="17,8.5 24,12.5 24,21.5 17,25.5 10,21.5 10,12.5" stroke="url(#lg)" stroke-width="1.4" fill="none" stroke-linejoin="round" opacity="0.45"/>
+            <line x1="17" y1="2" x2="17" y2="8.5" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
+            <line x1="29.5" y1="9.5" x2="24" y2="12.5" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
+            <line x1="29.5" y1="24.5" x2="24" y2="21.5" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
+            <line x1="17" y1="32" x2="17" y2="25.5" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
+            <line x1="4.5" y1="24.5" x2="10" y2="21.5" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
+            <line x1="4.5" y1="9.5" x2="10" y2="12.5" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
             <circle cx="17" cy="17" r="2" fill="url(#lg)"/>
           </svg>
         </div>
