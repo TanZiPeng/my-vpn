@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(curl -s http://localhost:3001/api/configs)",
+      "Bash(cat)",
+      "Bash(curl -s -F \"file=@/tmp/test-config.yml\" http://localhost:3001/api/upload)",
+      "Bash(curl -s http://localhost:3001/api/download/test-config.yml)",
+      "Bash(curl -s http://localhost:5173/api/configs)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3001 -ErrorAction SilentlyContinue | Select-Object -Property OwningProcess -Unique | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue })",
+      "PowerShell(Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue | Select-Object -Property OwningProcess -Unique | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }; Get-NetTCPConnection -LocalPort 5174 -ErrorAction SilentlyContinue | Select-Object -Property OwningProcess -Unique | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue })",
+      "Bash(curl -s -X PUT http://localhost:3001/api/order -H \"Content-Type: application/json\" -d '{\"names\":[\"test-config.yml\",\"test-config copy.yml\"]}')",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\([x['name'] for x in d[:3]], indent=2\\)\\)\")",
+      "Bash(curl -s http://localhost:5173/src/composables/useDragSort.js)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3001 -ErrorAction SilentlyContinue)"
+    ]
+  }
+}

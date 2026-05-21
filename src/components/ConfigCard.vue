@@ -1,0 +1,375 @@
+<template>
+  <div class="card" :style="cardStyle">
+    <button class="delete-btn" @click.stop="$emit('delete', config.name)" title="Delete">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+    </button>
+
+    <div class="drag-handle">
+      <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
+        <circle cx="2.5" cy="2.5" r="1.2" fill="currentColor"/>
+        <circle cx="7.5" cy="2.5" r="1.2" fill="currentColor"/>
+        <circle cx="2.5" cy="8" r="1.2" fill="currentColor"/>
+        <circle cx="7.5" cy="8" r="1.2" fill="currentColor"/>
+        <circle cx="2.5" cy="13.5" r="1.2" fill="currentColor"/>
+        <circle cx="7.5" cy="13.5" r="1.2" fill="currentColor"/>
+      </svg>
+    </div>
+
+    <div class="card-banner" :style="bannerStyle">
+      <div class="banner-deco">
+        <div class="ring r1"></div>
+        <div class="ring r2"></div>
+        <div class="shimmer"></div>
+      </div>
+      <div class="banner-content">
+        <svg class="file-icon" width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <path d="M6 3h10l6 6v16a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.6)" stroke-width="1"/>
+          <path d="M16 3v6h6" stroke="rgba(255,255,255,0.6)" stroke-width="1"/>
+        </svg>
+        <span class="badge">.YML</span>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <h3 class="file-name" :title="config.name">{{ displayName }}</h3>
+      <div class="file-meta">
+        <span>{{ formatSize(config.size) }}</span>
+        <span class="sep">/</span>
+        <span>{{ formatDate(config.uploadedAt) }}</span>
+      </div>
+    </div>
+
+    <div class="card-actions">
+      <button class="action-btn copy-btn" :class="{ copied }" @click.stop="copyLink">
+        <svg v-if="!copied" width="13" height="13" viewBox="0 0 14 14" fill="none">
+          <rect x="4" y="4" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/>
+          <path d="M10 4V3a1 1 0 00-1-1H3a1 1 0 00-1 1v6a1 1 0 001 1h1" stroke="currentColor" stroke-width="1.2"/>
+        </svg>
+        <svg v-else width="13" height="13" viewBox="0 0 14 14" fill="none">
+          <path d="M3 7.5l3 3 5-5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        {{ copied ? 'Copied!' : 'Copy' }}
+      </button>
+      <button class="action-btn download-btn" :style="downloadStyle" @click.stop="download">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+          <path d="M7 2v7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          <path d="M4 7l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 11.5h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        Save
+      </button>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue'
+
+const props = defineProps({
+  config: { type: Object, required: true }
+})
+
+defineEmits(['delete'])
+
+const copied = ref(false)
+
+const palettes = [
+  { from: '#6366f1', to: '#a78bfa' },
+  { from: '#f43f5e', to: '#fb7185' },
+  { from: '#f97316', to: '#fbbf24' },
+  { from: '#10b981', to: '#34d399' },
+  { from: '#8b5cf6', to: '#c084fc' },
+  { from: '#0891b2', to: '#22d3ee' },
+  { from: '#ec4899', to: '#f9a8d4' },
+  { from: '#0ea5e9', to: '#7dd3fc' },
+  { from: '#14b8a6', to: '#5eead4' },
+  { from: '#e11d48', to: '#f472b6' },
+  { from: '#7c3aed', to: '#818cf8' },
+  { from: '#ea580c', to: '#fb923c' },
+]
+
+function hashName(name) {
+  let h = 0
+  for (let i = 0; i < name.length; i++) {
+    h = ((h << 5) - h + name.charCodeAt(i)) | 0
+  }
+  return Math.abs(h)
+}
+
+const palette = computed(() => palettes[hashName(props.config.name) % palettes.length])
+
+const cardStyle = computed(() => ({
+  '--c-from': palette.value.from,
+  '--c-to': palette.value.to,
+}))
+
+const bannerStyle = computed(() => ({
+  background: `linear-gradient(135deg, ${palette.value.from}, ${palette.value.to})`,
+}))
+
+const downloadStyle = computed(() => ({
+  background: palette.value.from,
+  boxShadow: `0 2px 8px ${palette.value.from}33`,
+}))
+
+const displayName = computed(() => {
+  return props.config.name.replace(/\.(yml|yaml)$/i, '')
+})
+
+function getDownloadUrl() {
+  return `${window.location.origin}/api/download/${encodeURIComponent(props.config.name)}`
+}
+
+async function copyLink() {
+  try {
+    await navigator.clipboard.writeText(getDownloadUrl())
+    copied.value = true
+    setTimeout(() => { copied.value = false }, 2000)
+  } catch {
+    const input = document.createElement('input')
+    input.value = getDownloadUrl()
+    document.body.appendChild(input)
+    input.select()
+    document.execCommand('copy')
+    document.body.removeChild(input)
+    copied.value = true
+    setTimeout(() => { copied.value = false }, 2000)
+  }
+}
+
+function download() {
+  const a = document.createElement('a')
+  a.href = getDownloadUrl()
+  a.download = props.config.name
+  a.click()
+}
+
+function formatSize(bytes) {
+  if (!bytes) return '—'
+  if (bytes < 1024) return bytes + ' B'
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '—'
+  const d = new Date(dateStr)
+  const now = new Date()
+  const diff = now - d
+  if (diff < 60000) return 'Just now'
+  if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago'
+  if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago'
+  return d.toLocaleDateString('zh-CN')
+}
+</script>
+
+<style scoped>
+.card {
+  position: relative;
+  background: var(--card-bg);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              translate 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  touch-action: none;
+}
+
+.card:active {
+  cursor: grabbing;
+}
+
+.card:hover {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.04);
+  translate: 0 -4px;
+}
+
+.delete-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.6);
+  opacity: 0;
+  transition: all 0.2s;
+  z-index: 2;
+  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.card:hover .delete-btn { opacity: 1; }
+.delete-btn:hover { background: rgba(0, 0, 0, 0.25); color: #fff; }
+
+.drag-handle {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.4);
+  opacity: 0;
+  transition: all 0.2s;
+  z-index: 2;
+}
+
+.card:hover .drag-handle { opacity: 1; }
+.drag-handle:hover { color: rgba(255, 255, 255, 0.8); }
+
+.card-banner {
+  position: relative;
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.banner-deco {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+}
+
+.r1 { width: 120px; height: 120px; top: -40px; right: -30px; }
+.r2 { width: 80px; height: 80px; bottom: -30px; left: -20px; }
+
+.shimmer {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.06) 45%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.06) 55%,
+    transparent 60%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.8s ease;
+}
+
+.card:hover .shimmer {
+  transform: translateX(30%);
+}
+
+.banner-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.file-icon { opacity: 0.9; }
+
+.badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(4px);
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.card-body {
+  padding: 14px 16px 0;
+  flex: 1;
+}
+
+.file-name {
+  font-size: 13.5px;
+  font-weight: 650;
+  line-height: 1.35;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: -0.1px;
+}
+
+.file-meta {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sep {
+  opacity: 0.35;
+  font-weight: 300;
+}
+
+.card-actions {
+  padding: 12px 14px 14px;
+  display: flex;
+  gap: 6px;
+}
+
+.action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 0;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s;
+  letter-spacing: 0.1px;
+}
+
+.copy-btn {
+  background: var(--bg);
+  color: var(--text-secondary);
+}
+
+.copy-btn:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.copy-btn.copied {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.download-btn {
+  color: #fff;
+}
+
+.download-btn:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+</style>
