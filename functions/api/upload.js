@@ -8,9 +8,17 @@ export async function onRequestPost(context) {
     return new Response('No file provided', { status: 400 })
   }
 
-  const name = file.name || 'config.yml'
+  let name = file.name || 'config.yml'
   const content = await file.text()
   const size = file.size
+
+  const base = name.replace(/\.(yml|yaml)$/i, '')
+  const ext = name.match(/\.(yml|yaml)$/i)?.[0] || '.yml'
+  let n = 0
+  while (await env.VPN_CONFIGS.get(`meta:${name}`)) {
+    n++
+    name = `${base}(${n})${ext}`
+  }
 
   await env.VPN_CONFIGS.put(`file:${name}`, content)
   await env.VPN_CONFIGS.put(`meta:${name}`, JSON.stringify({

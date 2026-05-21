@@ -59,7 +59,15 @@ app.put('/api/order', (req, res) => {
 
 app.post('/api/upload', upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file' })
-  const name = req.file.originalname
+  const origName = req.file.originalname
+  const base = origName.replace(/\.(yml|yaml)$/i, '')
+  const ext = origName.match(/\.(yml|yaml)$/i)?.[0] || '.yml'
+  let name = origName
+  let n = 0
+  while (existsSync(join(UPLOAD_DIR, name))) {
+    n++
+    name = `${base}(${n})${ext}`
+  }
   const dest = join(UPLOAD_DIR, name)
   const src = req.file.path
   const content = readFileSync(src)
