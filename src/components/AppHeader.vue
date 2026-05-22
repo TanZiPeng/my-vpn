@@ -2,7 +2,7 @@
   <header class="header">
     <div class="header-inner">
       <div class="header-left">
-        <div class="logo">
+        <div class="logo" @mouseenter="onLogoEnter" @mouseleave="onLogoLeave">
           <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
             <defs>
               <linearGradient id="lg" x1="0" y1="0" x2="34" y2="34">
@@ -10,15 +10,23 @@
                 <stop offset="1" stop-color="#a78bfa"/>
               </linearGradient>
             </defs>
-            <polygon points="17,2 29.5,9.5 29.5,24.5 17,32 4.5,24.5 4.5,9.5" stroke="url(#lg)" stroke-width="1.6" fill="none" stroke-linejoin="round"/>
-            <polygon points="17,8.5 24,12.5 24,21.5 17,25.5 10,21.5 10,12.5" stroke="url(#lg)" stroke-width="1.4" fill="none" stroke-linejoin="round" opacity="0.45"/>
-            <line x1="17" y1="2" x2="17" y2="8.5" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
-            <line x1="29.5" y1="9.5" x2="24" y2="12.5" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
-            <line x1="29.5" y1="24.5" x2="24" y2="21.5" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
-            <line x1="17" y1="32" x2="17" y2="25.5" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
-            <line x1="4.5" y1="24.5" x2="10" y2="21.5" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
-            <line x1="4.5" y1="9.5" x2="10" y2="12.5" stroke="url(#lg)" stroke-width="1.1" opacity="0.3"/>
-            <circle cx="17" cy="17" r="2" fill="url(#lg)"/>
+            <!-- 外六边形6段，各自用 SVG transform 做动画 -->
+            <line :transform="segs[0]" x1="17" y1="2"    x2="29.5" y2="9.5"  stroke="url(#lg)" stroke-width="1.6" stroke-linecap="round"/>
+            <line :transform="segs[1]" x1="29.5" y1="9.5"  x2="29.5" y2="24.5" stroke="url(#lg)" stroke-width="1.6" stroke-linecap="round"/>
+            <line :transform="segs[2]" x1="29.5" y1="24.5" x2="17"   y2="32"   stroke="url(#lg)" stroke-width="1.6" stroke-linecap="round"/>
+            <line :transform="segs[3]" x1="17"   y1="32"   x2="4.5"  y2="24.5" stroke="url(#lg)" stroke-width="1.6" stroke-linecap="round"/>
+            <line :transform="segs[4]" x1="4.5"  y1="24.5" x2="4.5"  y2="9.5"  stroke="url(#lg)" stroke-width="1.6" stroke-linecap="round"/>
+            <line :transform="segs[5]" x1="4.5"  y1="9.5"  x2="17"   y2="2"    stroke="url(#lg)" stroke-width="1.6" stroke-linecap="round"/>
+            <!-- 内六边形 -->
+            <polygon class="hex-inner" :style="innerStyle" points="17,8.5 24,12.5 24,21.5 17,25.5 10,21.5 10,12.5" stroke="url(#lg)" stroke-width="1.4" fill="none" stroke-linejoin="round"/>
+            <!-- 连接线 -->
+            <line x1="17" y1="2"    x2="17"   y2="8.5"  stroke="url(#lg)" stroke-width="1.1" :opacity="spokeOpacity"/>
+            <line x1="29.5" y1="9.5"  x2="24"   y2="12.5" stroke="url(#lg)" stroke-width="1.1" :opacity="spokeOpacity"/>
+            <line x1="29.5" y1="24.5" x2="24"   y2="21.5" stroke="url(#lg)" stroke-width="1.1" :opacity="spokeOpacity"/>
+            <line x1="17"   y1="32"   x2="17"   y2="25.5" stroke="url(#lg)" stroke-width="1.1" :opacity="spokeOpacity"/>
+            <line x1="4.5"  y1="24.5" x2="10"   y2="21.5" stroke="url(#lg)" stroke-width="1.1" :opacity="spokeOpacity"/>
+            <line x1="4.5"  y1="9.5"  x2="10"   y2="12.5" stroke="url(#lg)" stroke-width="1.1" :opacity="spokeOpacity"/>
+            <circle cx="17" cy="17" :r="centerR" fill="url(#lg)"/>
           </svg>
         </div>
         <div>
@@ -38,7 +46,136 @@
 </template>
 
 <script setup>
+import { ref, computed } from 'vue'
+
 defineEmits(['upload'])
+
+// 每段向外弹出的方向 (dx, dy)
+const DIRS = [
+  [0, -6],   // s1 上
+  [6, -3],   // s2 右上
+  [6,  3],   // s3 右下
+  [0,  6],   // s4 下
+  [-6,  3],  // s5 左下
+  [-6, -3],  // s6 左上
+]
+
+const progress = ref(new Array(6).fill(0))
+const innerScale = ref(1)
+const spokeOpacity = ref(0.3)
+const centerR = ref(2)
+
+let timers = []
+
+function easeOut(t) {
+  return 1 - Math.pow(1 - t, 3)
+}
+
+function easeIn(t) {
+  return t * t * t
+}
+
+function animateSeg(i, delay) {
+  setTimeout(() => {
+    const duration = 550
+    const start = performance.now()
+    function frame(now) {
+      const t = Math.min((now - start) / duration, 1)
+      // 前40%弹出，后60%收回，带弹性
+      let p
+      if (t < 0.4) {
+        p = easeIn(t / 0.4)
+      } else {
+        const t2 = (t - 0.4) / 0.6
+        // 弹性收回：overshoots slightly
+        p = 1 - (1 + 2.5 * t2) * Math.pow(1 - t2, 2.5)
+        p = Math.max(0, 1 - p)
+      }
+      progress.value[i] = p
+      if (t < 1) requestAnimationFrame(frame)
+      else progress.value[i] = 0
+    }
+    requestAnimationFrame(frame)
+  }, delay)
+}
+
+function animateInner(delay) {
+  setTimeout(() => {
+    const duration = 550
+    const start = performance.now()
+    function frame(now) {
+      const t = Math.min((now - start) / duration, 1)
+      let s
+      if (t < 0.4) s = 1 - easeIn(t / 0.4) * 0.5
+      else s = 0.5 + easeOut((t - 0.4) / 0.6) * 0.5
+      innerScale.value = s
+      if (t < 1) requestAnimationFrame(frame)
+      else innerScale.value = 1
+    }
+    requestAnimationFrame(frame)
+  }, delay)
+}
+
+function animateSpokes(delay) {
+  setTimeout(() => {
+    const duration = 550
+    const start = performance.now()
+    function frame(now) {
+      const t = Math.min((now - start) / duration, 1)
+      let o
+      if (t < 0.35) o = 0.3 * (1 - t / 0.35)
+      else o = 0.3 * ((t - 0.35) / 0.65)
+      spokeOpacity.value = o
+      if (t < 1) requestAnimationFrame(frame)
+      else spokeOpacity.value = 0.3
+    }
+    requestAnimationFrame(frame)
+  }, delay)
+}
+
+function animateCenter(delay) {
+  setTimeout(() => {
+    const duration = 550
+    const start = performance.now()
+    function frame(now) {
+      const t = Math.min((now - start) / duration, 1)
+      let r
+      if (t < 0.4) r = 2 + easeIn(t / 0.4) * 2.5
+      else r = 4.5 - easeOut((t - 0.4) / 0.6) * 2.5
+      centerR.value = r
+      if (t < 1) requestAnimationFrame(frame)
+      else centerR.value = 2
+    }
+    requestAnimationFrame(frame)
+  }, delay)
+}
+
+function onLogoEnter() {
+  timers.forEach(clearTimeout)
+  timers = []
+  const delays = [0, 40, 80, 120, 80, 40]
+  delays.forEach((d, i) => animateSeg(i, d))
+  animateInner(60)
+  animateSpokes(30)
+  animateCenter(50)
+}
+
+function onLogoLeave() {
+  // 动画自然结束，不需要额外处理
+}
+
+const segs = computed(() =>
+  progress.value.map((p, i) => {
+    const [dx, dy] = DIRS[i]
+    return `translate(${dx * p}, ${dy * p})`
+  })
+)
+
+const innerStyle = computed(() => ({
+  transformOrigin: '17px 17px',
+  transform: `scale(${innerScale.value})`,
+  opacity: innerScale.value < 1 ? 0.45 * (innerScale.value / 1) : 0.45,
+}))
 </script>
 
 <style scoped>
@@ -69,6 +206,15 @@ defineEmits(['upload'])
 
 .logo {
   flex-shrink: 0;
+  cursor: pointer;
+}
+
+.logo svg {
+  transition: filter 0.3s ease;
+}
+
+.logo:hover svg {
+  filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.5));
 }
 
 .title {
@@ -90,6 +236,7 @@ defineEmits(['upload'])
   align-items: center;
   gap: 6px;
   padding: 9px 18px;
+  overflow: hidden;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   color: #fff;
   border-radius: 10px;
@@ -102,6 +249,17 @@ defineEmits(['upload'])
 .upload-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+}
+
+.upload-btn:hover svg {
+  animation: upload-loop 0.55s ease forwards;
+}
+
+@keyframes upload-loop {
+  0%   { transform: translateY(0);    opacity: 1; animation-timing-function: ease-in; }
+  38%  { transform: translateY(-10px); opacity: 0; }
+  39%  { transform: translateY(10px);  opacity: 0; animation-timing-function: ease-out; }
+  100% { transform: translateY(0);    opacity: 1; }
 }
 
 .upload-btn:active {

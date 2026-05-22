@@ -437,6 +437,17 @@ function formatDate(dateStr) {
   color: var(--text);
 }
 
+.view-btn:hover svg {
+  animation: eye-blink 0.5s ease;
+}
+
+@keyframes eye-blink {
+  0%   { transform: scaleY(1); }
+  30%  { transform: scaleY(0.2); }
+  60%  { transform: scaleY(1.1); }
+  100% { transform: scaleY(1); }
+}
+
 .copy-btn {
   background: var(--bg);
   color: var(--text-secondary);
@@ -572,11 +583,23 @@ function formatDate(dateStr) {
 .download-btn {
   color: #fff;
   transition: all 0.2s;
+  overflow: hidden;
 }
 
 .download-btn:hover:not(.downloading) {
   opacity: 0.88;
   transform: translateY(-1px);
+}
+
+.download-btn:hover:not(.downloading) svg {
+  animation: download-loop 0.55s ease forwards;
+}
+
+@keyframes download-loop {
+  0%   { transform: translateY(0);    opacity: 1; animation-timing-function: ease-in; }
+  38%  { transform: translateY(10px);  opacity: 0; }
+  39%  { transform: translateY(-10px); opacity: 0; animation-timing-function: ease-out; }
+  100% { transform: translateY(0);    opacity: 1; }
 }
 
 .download-btn.downloading {
