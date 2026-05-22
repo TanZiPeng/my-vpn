@@ -6,3 +6,4 @@ dev-uploads
 Thumbs.db
 *.local
 *.log
+.claude

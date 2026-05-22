@@ -29,8 +29,14 @@
           />
           <p v-if="error" class="confirm-error">{{ error }}</p>
           <div class="confirm-actions">
-            <button class="btn-cancel" @click="cancel">Cancel</button>
-            <button class="btn-rename" :disabled="!password || !newName.trim()" @click="confirm">Rename</button>
+            <button class="btn-cancel" :disabled="loading" @click="cancel">Cancel</button>
+            <button class="btn-rename" :disabled="!password || !newName.trim() || loading" @click="confirm">
+              <svg v-if="loading" class="spin" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <circle cx="7" cy="7" r="5" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>
+                <path d="M12 7a5 5 0 00-5-5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              {{ loading ? 'Renaming...' : 'Rename' }}
+            </button>
           </div>
         </div>
       </div>
@@ -51,6 +57,7 @@ const emit = defineEmits(['confirm', 'cancel'])
 const newName = ref('')
 const password = ref('')
 const error = ref('')
+const loading = ref(false)
 const nameInput = ref(null)
 const passInput = ref(null)
 
@@ -59,6 +66,7 @@ watch(() => props.visible, (v) => {
     newName.value = props.name ? props.name.replace(/\.(yml|yaml)$/i, '') : ''
     password.value = ''
     error.value = ''
+    loading.value = false
     nextTick(() => {
       nameInput.value?.focus()
       nameInput.value?.select()
@@ -71,7 +79,8 @@ function focusPass() {
 }
 
 function confirm() {
-  if (!password.value || !newName.value.trim()) return
+  if (!password.value || !newName.value.trim() || loading.value) return
+  loading.value = true
   emit('confirm', newName.value.trim(), password.value)
 }
 
@@ -81,6 +90,7 @@ function cancel() {
 
 function showError(msg) {
   error.value = msg
+  loading.value = false
 }
 
 defineExpose({ showError })
@@ -198,6 +208,10 @@ defineExpose({ showError })
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   color: #fff;
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .btn-rename:hover:not(:disabled) {
@@ -210,4 +224,11 @@ defineExpose({ showError })
   cursor: not-allowed;
   box-shadow: none;
 }
+
+.spin {
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
