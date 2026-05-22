@@ -50,29 +50,37 @@
 
     <div class="card-actions">
       <button class="action-btn view-btn" @click.stop="$emit('view', config.name)">
-        <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+        <svg width="11" height="11" viewBox="0 0 14 14" fill="none">
           <ellipse cx="7" cy="7" rx="5.5" ry="3.5" stroke="currentColor" stroke-width="1.2"/>
           <circle cx="7" cy="7" r="1.5" fill="currentColor"/>
         </svg>
         View
       </button>
       <button class="action-btn copy-btn" :class="{ copied }" @click.stop="copyLink">
-        <svg v-if="!copied" width="13" height="13" viewBox="0 0 14 14" fill="none">
-          <rect x="4" y="4" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/>
-          <path d="M10 4V3a1 1 0 00-1-1H3a1 1 0 00-1 1v6a1 1 0 001 1h1" stroke="currentColor" stroke-width="1.2"/>
-        </svg>
-        <svg v-else width="13" height="13" viewBox="0 0 14 14" fill="none">
-          <path d="M3 7.5l3 3 5-5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        {{ copied ? 'Copied!' : 'Copy' }}
+        <span class="copy-particles" v-if="copied">
+          <i v-for="n in 8" :key="n"></i>
+        </span>
+        <Transition name="copy-icon" mode="out-in">
+          <svg v-if="!copied" key="copy" width="12" height="12" viewBox="0 0 14 14" fill="none">
+            <rect x="4" y="4" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/>
+            <path d="M10 4V3a1 1 0 00-1-1H3a1 1 0 00-1 1v6a1 1 0 001 1h1" stroke="currentColor" stroke-width="1.2"/>
+          </svg>
+          <svg v-else key="check" width="12" height="12" viewBox="0 0 14 14" fill="none">
+            <path d="M3 7.5l3 3 5-5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </Transition>
+        <Transition name="copy-text" mode="out-in">
+          <span v-if="!copied" key="t1">Copy</span>
+          <span v-else key="t2">Copied</span>
+        </Transition>
       </button>
       <button class="action-btn download-btn" :class="{ downloading }" :style="downloadStyle" @click.stop="download">
-        <svg v-if="!downloading" width="13" height="13" viewBox="0 0 14 14" fill="none">
+        <svg v-if="!downloading" width="11" height="11" viewBox="0 0 14 14" fill="none">
           <path d="M7 2v7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
           <path d="M4 7l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M2 11.5h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
         </svg>
-        <svg v-else class="spin" width="13" height="13" viewBox="0 0 14 14" fill="none">
+        <svg v-else class="spin" width="11" height="11" viewBox="0 0 14 14" fill="none">
           <circle cx="7" cy="7" r="5" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>
           <path d="M12 7a5 5 0 00-5-5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
         </svg>
@@ -207,7 +215,7 @@ function formatDate(dateStr) {
   background: var(--card-bg);
   border-radius: 16px;
   box-shadow: var(--shadow);
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   cursor: grab;
@@ -275,6 +283,7 @@ function formatDate(dateStr) {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  border-radius: 16px 16px 0 0;
 }
 
 .banner-deco {
@@ -399,6 +408,8 @@ function formatDate(dateStr) {
   padding: 12px 14px 14px;
   display: flex;
   gap: 6px;
+  position: relative;
+  overflow: visible;
 }
 
 .action-btn {
@@ -406,13 +417,14 @@ function formatDate(dateStr) {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 8px 0;
+  gap: 3px;
+  padding: 7px 0;
   border-radius: 8px;
-  font-size: 12px;
+  font-size: 10.5px;
   font-weight: 600;
   transition: all 0.2s;
   letter-spacing: 0.1px;
+  line-height: 1;
 }
 
 .view-btn {
@@ -428,6 +440,9 @@ function formatDate(dateStr) {
 .copy-btn {
   background: var(--bg);
   color: var(--text-secondary);
+  position: relative;
+  overflow: visible;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .copy-btn:hover {
@@ -436,8 +451,122 @@ function formatDate(dateStr) {
 }
 
 .copy-btn.copied {
-  background: #dcfce7;
-  color: #16a34a;
+  background: #10b981;
+  color: #fff;
+  animation: copy-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes copy-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+/* Particle burst */
+.copy-particles {
+  position: absolute;
+  inset: -20px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.copy-particles i {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: particle-burst 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.copy-particles i:nth-child(odd) {
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+}
+
+.copy-particles i:nth-child(1) {
+  background: #fbbf24;
+  --px: -36px;
+  --py: -32px;
+}
+.copy-particles i:nth-child(2) {
+  background: #f472b6;
+  --px: 38px;
+  --py: -28px;
+}
+.copy-particles i:nth-child(3) {
+  background: #60a5fa;
+  --px: -40px;
+  --py: 16px;
+}
+.copy-particles i:nth-child(4) {
+  background: #a78bfa;
+  --px: 34px;
+  --py: 30px;
+}
+.copy-particles i:nth-child(5) {
+  background: #34d399;
+  --px: -12px;
+  --py: -40px;
+}
+.copy-particles i:nth-child(6) {
+  background: #fb923c;
+  --px: 42px;
+  --py: 6px;
+}
+.copy-particles i:nth-child(7) {
+  background: #f43f5e;
+  --px: -32px;
+  --py: -10px;
+}
+.copy-particles i:nth-child(8) {
+  background: #6366f1;
+  --px: 10px;
+  --py: 36px;
+}
+
+@keyframes particle-burst {
+  0% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 1;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(-50% + var(--px)), calc(-50% + var(--py))) scale(0);
+    opacity: 0;
+  }
+}
+
+/* Icon transition */
+.copy-icon-enter-active,
+.copy-icon-leave-active {
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.copy-icon-enter-from {
+  opacity: 0;
+  transform: scale(0.5) rotate(-15deg);
+}
+.copy-icon-leave-to {
+  opacity: 0;
+  transform: scale(0.5) rotate(15deg);
+}
+
+/* Text transition */
+.copy-text-enter-active,
+.copy-text-leave-active {
+  transition: all 0.2s ease;
+}
+.copy-text-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
+}
+.copy-text-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 .download-btn {
