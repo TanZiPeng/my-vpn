@@ -49,6 +49,8 @@
               :style="!hasDragged ? { animationDelay: `${i * 0.06}s` } : undefined"
               @pointerdown="startDrag($event, i)"
               @delete="deleteConfig"
+              @view="viewTarget = $event"
+              @rename="renameConfig"
             />
           </TransitionGroup>
         </template>
@@ -66,6 +68,12 @@
         <span class="footer-copy">&copy; {{ new Date().getFullYear() }} VPN Config Share</span>
       </div>
     </footer>
+
+    <ViewDialog
+      :visible="!!viewTarget"
+      :name="viewTarget || ''"
+      @close="viewTarget = null"
+    />
 
     <UploadDialog
       :visible="showUpload"
@@ -98,6 +106,7 @@ import AppHeader from './components/AppHeader.vue'
 import ConfigCard from './components/ConfigCard.vue'
 import UploadDialog from './components/UploadDialog.vue'
 import ConfirmDialog from './components/ConfirmDialog.vue'
+import ViewDialog from './components/ViewDialog.vue'
 import { useDragSort } from './composables/useDragSort.js'
 
 const configs = ref([])
@@ -106,6 +115,7 @@ const showUpload = ref(false)
 const toasts = ref([])
 const hasDragged = ref(false)
 const deleteTarget = ref(null)
+const viewTarget = ref(null)
 
 const { dragIndex, isDragging, startDrag: _startDrag } = useDragSort(configs, {
   onOrderChange: persistOrder,
@@ -178,6 +188,30 @@ async function confirmDelete(password) {
 function onUploaded() {
   toast('Config uploaded successfully')
   fetchConfigs()
+}
+
+async function renameConfig(oldName, newName) {
+  const password = prompt('Enter admin password to rename:')
+  if (password === null) return
+  try {
+    const res = await fetch(`/api/rename/${encodeURIComponent(oldName)}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Password': password,
+      },
+      body: JSON.stringify({ newName }),
+    })
+    if (res.status === 403) { toast('Password incorrect', true); return }
+    if (res.status === 409) { toast('Name already exists', true); return }
+    if (!res.ok) throw new Error()
+    const { name: finalName } = await res.json()
+    const idx = configs.value.findIndex(c => c.name === oldName)
+    if (idx !== -1) configs.value[idx] = { ...configs.value[idx], name: finalName }
+    toast('Renamed successfully')
+  } catch {
+    toast('Failed to rename', true)
+  }
 }
 
 onMounted(fetchConfigs)

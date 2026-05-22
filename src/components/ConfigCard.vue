@@ -33,7 +33,23 @@
     </div>
 
     <div class="card-body">
-      <h3 class="file-name" :title="config.name">{{ displayName }}</h3>
+      <div class="file-name-row">
+        <input
+          v-if="renaming"
+          ref="renameInput"
+          v-model="renameValue"
+          class="rename-input"
+          @keydown="onRenameKeydown"
+          @blur="commitRename"
+          @click.stop
+        />
+        <h3 v-else class="file-name" :title="config.name">{{ displayName }}</h3>
+        <button v-if="!renaming" class="rename-btn" @click.stop="startRename" title="Rename">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+            <path d="M9.5 2.5l2 2-7 7H2.5v-2l7-7z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
       <div class="file-meta">
         <span>{{ formatSize(config.size) }}</span>
         <span class="sep">/</span>
@@ -42,6 +58,13 @@
     </div>
 
     <div class="card-actions">
+      <button class="action-btn view-btn" @click.stop="$emit('view', config.name)">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+          <ellipse cx="7" cy="7" rx="5.5" ry="3.5" stroke="currentColor" stroke-width="1.2"/>
+          <circle cx="7" cy="7" r="1.5" fill="currentColor"/>
+        </svg>
+        View
+      </button>
       <button class="action-btn copy-btn" :class="{ copied }" @click.stop="copyLink">
         <svg v-if="!copied" width="13" height="13" viewBox="0 0 14 14" fill="none">
           <rect x="4" y="4" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/>
@@ -52,28 +75,62 @@
         </svg>
         {{ copied ? 'Copied!' : 'Copy' }}
       </button>
-      <button class="action-btn download-btn" :style="downloadStyle" @click.stop="download">
-        <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+      <button class="action-btn download-btn" :class="{ downloading }" :style="downloadStyle" @click.stop="download">
+        <svg v-if="!downloading" width="13" height="13" viewBox="0 0 14 14" fill="none">
           <path d="M7 2v7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
           <path d="M4 7l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M2 11.5h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
         </svg>
-        Save
+        <svg v-else class="spin" width="13" height="13" viewBox="0 0 14 14" fill="none">
+          <circle cx="7" cy="7" r="5" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>
+          <path d="M12 7a5 5 0 00-5-5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        {{ downloading ? 'Saving...' : 'Save' }}
       </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 
 const props = defineProps({
   config: { type: Object, required: true }
 })
 
-defineEmits(['delete'])
+const emit = defineEmits(['delete', 'view', 'rename'])
 
 const copied = ref(false)
+const downloading = ref(false)
+const renaming = ref(false)
+const renameValue = ref('')
+const renameInput = ref(null)
+
+function startRename() {
+  renameValue.value = displayName.value
+  renaming.value = true
+  nextTick(() => {
+    renameInput.value?.focus()
+    renameInput.value?.select()
+  })
+}
+
+function cancelRename() {
+  renaming.value = false
+}
+
+function commitRename() {
+  const val = renameValue.value.trim()
+  if (val && val !== displayName.value) {
+    emit('rename', props.config.name, val)
+  }
+  renaming.value = false
+}
+
+function onRenameKeydown(e) {
+  if (e.key === 'Enter') commitRename()
+  if (e.key === 'Escape') cancelRename()
+}
 
 const palettes = [
   { from: '#6366f1', to: '#a78bfa' },
@@ -139,11 +196,28 @@ async function copyLink() {
   }
 }
 
-function download() {
-  const a = document.createElement('a')
-  a.href = getDownloadUrl()
-  a.download = props.config.name
-  a.click()
+async function download() {
+  if (downloading.value) return
+  downloading.value = true
+  try {
+    const res = await fetch(getDownloadUrl())
+    if (!res.ok) throw new Error()
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = props.config.name
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch {
+    // fallback
+    const a = document.createElement('a')
+    a.href = getDownloadUrl()
+    a.download = props.config.name
+    a.click()
+  } finally {
+    setTimeout(() => { downloading.value = false }, 600)
+  }
 }
 
 function formatSize(bytes) {
@@ -305,15 +379,60 @@ function formatDate(dateStr) {
   flex: 1;
 }
 
+.file-name-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
 .file-name {
   font-size: 13.5px;
   font-weight: 650;
   line-height: 1.35;
-  margin-bottom: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   letter-spacing: -0.1px;
+  flex: 1;
+  min-width: 0;
+}
+
+.rename-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.35;
+  letter-spacing: -0.1px;
+  border: 1.5px solid #6366f1;
+  border-radius: 6px;
+  padding: 2px 6px;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+}
+
+.rename-btn {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  opacity: 0;
+  transition: all 0.2s;
+}
+
+.card:hover .rename-btn {
+  opacity: 1;
+}
+
+.rename-btn:hover {
+  background: var(--border);
+  color: var(--text);
 }
 
 .file-meta {
@@ -349,6 +468,16 @@ function formatDate(dateStr) {
   letter-spacing: 0.1px;
 }
 
+.view-btn {
+  background: var(--bg);
+  color: var(--text-secondary);
+}
+
+.view-btn:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
 .copy-btn {
   background: var(--bg);
   color: var(--text-secondary);
@@ -366,10 +495,22 @@ function formatDate(dateStr) {
 
 .download-btn {
   color: #fff;
+  transition: all 0.2s;
 }
 
-.download-btn:hover {
+.download-btn:hover:not(.downloading) {
   opacity: 0.88;
   transform: translateY(-1px);
 }
+
+.download-btn.downloading {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.spin {
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>

@@ -1,6 +1,6 @@
 import express from 'express'
 import multer from 'multer'
-import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync, readdirSync, statSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync, readdirSync, statSync, renameSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
@@ -87,6 +87,43 @@ app.get('/api/download/:name', (req, res) => {
 })
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Tanzipengshidashuaige'
+
+app.put('/api/rename/:name', (req, res) => {
+  const auth = req.headers['x-admin-password']
+  if (auth !== ADMIN_PASSWORD) {
+    return res.status(403).json({ error: 'Wrong password' })
+  }
+  const oldName = req.params.name
+  const { newName } = req.body
+  if (!newName || !newName.trim()) {
+    return res.status(400).json({ error: 'newName required' })
+  }
+  const trimmed = newName.trim()
+  const hasExt = /\.(yml|yaml)$/i.test(trimmed)
+  const finalName = hasExt ? trimmed : trimmed + '.yml'
+
+  if (finalName === oldName) return res.json({ ok: true, name: finalName })
+
+  const oldPath = join(UPLOAD_DIR, oldName)
+  const newPath = join(UPLOAD_DIR, finalName)
+  if (!existsSync(oldPath)) return res.status(404).json({ error: 'File not found' })
+  if (existsSync(newPath)) return res.status(409).json({ error: 'Name already exists' })
+
+  try {
+    renameSync(oldPath, newPath)
+  } catch {
+    return res.status(500).json({ error: 'Rename failed' })
+  }
+
+  const order = loadOrder()
+  const idx = order.indexOf(oldName)
+  if (idx !== -1) {
+    order[idx] = finalName
+    saveOrder(order)
+  }
+
+  res.json({ ok: true, name: finalName })
+})
 
 app.delete('/api/configs/:name', (req, res) => {
   const auth = req.headers['x-admin-password']

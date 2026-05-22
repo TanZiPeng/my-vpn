@@ -40,15 +40,30 @@
 
           <div class="file-list" v-if="files.length">
             <TransitionGroup name="file">
-              <div class="file-item" v-for="(file, i) in files" :key="file.name + i">
+              <div class="file-item" v-for="(file, i) in files" :key="file.name + i"
+                :class="fileStatus[i]">
                 <div class="file-item-dot" :style="{ background: dotColor(i) }"></div>
                 <span class="file-item-name">{{ file.name }}</span>
                 <span class="file-item-size">{{ formatSize(file.size) }}</span>
-                <button class="file-item-remove" @click="files.splice(i, 1)">
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <div class="file-item-right">
+                  <svg v-if="fileStatus[i] === 'uploading'" class="spin" width="13" height="13" viewBox="0 0 14 14" fill="none">
+                    <circle cx="7" cy="7" r="5" stroke="var(--border)" stroke-width="1.5"/>
+                    <path d="M12 7a5 5 0 00-5-5" stroke="#6366f1" stroke-width="1.5" stroke-linecap="round"/>
                   </svg>
-                </button>
+                  <svg v-else-if="fileStatus[i] === 'done'" class="status-icon done" width="13" height="13" viewBox="0 0 14 14" fill="none">
+                    <circle cx="7" cy="7" r="5.5" fill="#dcfce7"/>
+                    <path d="M4.5 7l2 2 3-3" stroke="#16a34a" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <svg v-else-if="fileStatus[i] === 'error'" class="status-icon error" width="13" height="13" viewBox="0 0 14 14" fill="none">
+                    <circle cx="7" cy="7" r="5.5" fill="#fee2e2"/>
+                    <path d="M5 5l4 4M9 5l-4 4" stroke="#ef4444" stroke-width="1.4" stroke-linecap="round"/>
+                  </svg>
+                  <button v-else class="file-item-remove" @click="files.splice(i, 1)">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                      <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                  </button>
+                </div>
               </div>
             </TransitionGroup>
           </div>
@@ -81,6 +96,7 @@ const emit = defineEmits(['close', 'uploaded'])
 const files = ref([])
 const dragging = ref(false)
 const uploading = ref(false)
+const fileStatus = ref([])
 
 const colors = ['#6366f1', '#f43f5e', '#f97316', '#10b981', '#8b5cf6', '#0891b2', '#ec4899', '#0ea5e9']
 function dotColor(i) { return colors[i % colors.length] }
@@ -91,27 +107,40 @@ function onDrop(e) {
     f.name.endsWith('.yml') || f.name.endsWith('.yaml')
   )
   files.value.push(...dropped)
+  fileStatus.value = files.value.map(() => 'idle')
 }
 
 function onFileSelect(e) {
   files.value.push(...Array.from(e.target.files))
+  fileStatus.value = files.value.map(() => 'idle')
   e.target.value = ''
 }
 
 async function upload() {
   uploading.value = true
+  fileStatus.value = files.value.map(() => 'idle')
+  let hasError = false
   try {
-    for (const file of files.value) {
-      const formData = new FormData()
-      formData.append('file', file)
-      const res = await fetch('/api/upload', { method: 'POST', body: formData })
-      if (!res.ok) throw new Error(await res.text())
+    for (let i = 0; i < files.value.length; i++) {
+      fileStatus.value[i] = 'uploading'
+      try {
+        const formData = new FormData()
+        formData.append('file', files.value[i])
+        const res = await fetch('/api/upload', { method: 'POST', body: formData })
+        if (!res.ok) throw new Error(await res.text())
+        fileStatus.value[i] = 'done'
+      } catch {
+        fileStatus.value[i] = 'error'
+        hasError = true
+      }
     }
-    files.value = []
-    emit('uploaded')
-    emit('close')
-  } catch (err) {
-    alert('Upload failed: ' + err.message)
+    if (!hasError) {
+      await new Promise(r => setTimeout(r, 400))
+      files.value = []
+      fileStatus.value = []
+      emit('uploaded')
+      emit('close')
+    }
   } finally {
     uploading.value = false
   }
@@ -254,6 +283,19 @@ function formatSize(bytes) {
   background: var(--bg);
   border-radius: 10px;
   font-size: 13px;
+  transition: background 0.2s;
+}
+
+.file-item.uploading {
+  background: #f5f3ff;
+}
+
+.file-item.done {
+  background: #f0fdf4;
+}
+
+.file-item.error {
+  background: #fef2f2;
 }
 
 .file-item-dot {
@@ -278,6 +320,15 @@ function formatSize(bytes) {
   font-size: 12px;
 }
 
+.file-item-right {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+}
+
 .file-item-remove {
   width: 22px;
   height: 22px;
@@ -291,6 +342,16 @@ function formatSize(bytes) {
 }
 
 .file-item-remove:hover { background: #fef2f2; color: var(--danger); }
+
+.status-icon {
+  display: block;
+}
+
+.spin {
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
 
 .submit-btn {
   width: 100%;

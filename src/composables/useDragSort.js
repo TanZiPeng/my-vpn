@@ -6,7 +6,7 @@ export function useDragSort(items, { onOrderChange } = {}) {
   let state = null
 
   function startDrag(e, index) {
-    if (e.button !== 0 || e.target.closest('button')) return
+    if (e.button !== 0 || e.target.closest('button') || e.target.closest('input')) return
 
     const el = e.currentTarget
     const rect = el.getBoundingClientRect()
