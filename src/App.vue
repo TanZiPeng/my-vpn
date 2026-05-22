@@ -40,7 +40,7 @@
           <TransitionGroup name="flip" tag="div" :class="['grid', { 'grid--dragging': isDragging }]">
             <ConfigCard
               v-for="(c, i) in configs"
-              :key="c.name"
+              :key="c._id"
               :config="c"
               :class="{
                 'card-enter-anim': !hasDragged,
@@ -145,11 +145,13 @@ function toast(message, error = false) {
   }, 3000)
 }
 
+let nextId = 1
 async function fetchConfigs() {
   try {
     const res = await fetch('/api/configs')
     if (!res.ok) throw new Error('Failed to fetch')
-    configs.value = await res.json()
+    const data = await res.json()
+    configs.value = data.map(c => ({ ...c, _id: nextId++ }))
   } catch {
     toast('Failed to load configs', true)
   } finally {
