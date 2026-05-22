@@ -58,7 +58,7 @@
     <footer class="footer">
       <div class="footer-inner">
         <span class="footer-authors">
-          Created by <strong>wrall tallp</strong>, <strong>陈过汉</strong> & <strong>池大帝</strong>
+          Created by <strong>woral tallp</strong>, <strong>陈过汉</strong> & <strong>池大帝</strong>
         </span>
         <span class="footer-sep">·</span>
         <a class="footer-email" href="mailto:tan2133261080@gmail.com">tan2133261080@gmail.com</a>
