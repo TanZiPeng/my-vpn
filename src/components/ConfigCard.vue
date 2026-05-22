@@ -34,17 +34,8 @@
 
     <div class="card-body">
       <div class="file-name-row">
-        <input
-          v-if="renaming"
-          ref="renameInput"
-          v-model="renameValue"
-          class="rename-input"
-          @keydown="onRenameKeydown"
-          @blur="commitRename"
-          @click.stop
-        />
-        <h3 v-else class="file-name" :title="config.name">{{ displayName }}</h3>
-        <button v-if="!renaming" class="rename-btn" @click.stop="startRename" title="Rename">
+        <h3 class="file-name" :title="config.name">{{ displayName }}</h3>
+        <button class="rename-btn" @click.stop="emit('rename', config.name)" title="Rename">
           <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
             <path d="M9.5 2.5l2 2-7 7H2.5v-2l7-7z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
           </svg>
@@ -92,7 +83,7 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed } from 'vue'
 
 const props = defineProps({
   config: { type: Object, required: true }
@@ -102,35 +93,6 @@ const emit = defineEmits(['delete', 'view', 'rename'])
 
 const copied = ref(false)
 const downloading = ref(false)
-const renaming = ref(false)
-const renameValue = ref('')
-const renameInput = ref(null)
-
-function startRename() {
-  renameValue.value = displayName.value
-  renaming.value = true
-  nextTick(() => {
-    renameInput.value?.focus()
-    renameInput.value?.select()
-  })
-}
-
-function cancelRename() {
-  renaming.value = false
-}
-
-function commitRename() {
-  const val = renameValue.value.trim()
-  if (val && val !== displayName.value) {
-    emit('rename', props.config.name, val)
-  }
-  renaming.value = false
-}
-
-function onRenameKeydown(e) {
-  if (e.key === 'Enter') commitRename()
-  if (e.key === 'Escape') cancelRename()
-}
 
 const palettes = [
   { from: '#6366f1', to: '#a78bfa' },
@@ -396,21 +358,6 @@ function formatDate(dateStr) {
   letter-spacing: -0.1px;
   flex: 1;
   min-width: 0;
-}
-
-.rename-input {
-  flex: 1;
-  min-width: 0;
-  font-size: 13px;
-  font-weight: 650;
-  line-height: 1.35;
-  letter-spacing: -0.1px;
-  border: 1.5px solid #6366f1;
-  border-radius: 6px;
-  padding: 2px 6px;
-  background: var(--bg);
-  color: var(--text);
-  outline: none;
 }
 
 .rename-btn {

@@ -50,7 +50,7 @@
               @pointerdown="startDrag($event, i)"
               @delete="deleteConfig"
               @view="viewTarget = $event"
-              @rename="renameConfig"
+      @rename="renameTarget = $event"
             />
           </TransitionGroup>
         </template>
@@ -89,6 +89,14 @@
       @cancel="deleteTarget = null"
     />
 
+    <RenameDialog
+      ref="renameRef"
+      :visible="!!renameTarget"
+      :name="renameTarget"
+      @confirm="confirmRename"
+      @cancel="renameTarget = null"
+    />
+
     <div class="toast-container">
       <div
         v-for="(t, i) in toasts"
@@ -106,6 +114,7 @@ import AppHeader from './components/AppHeader.vue'
 import ConfigCard from './components/ConfigCard.vue'
 import UploadDialog from './components/UploadDialog.vue'
 import ConfirmDialog from './components/ConfirmDialog.vue'
+import RenameDialog from './components/RenameDialog.vue'
 import ViewDialog from './components/ViewDialog.vue'
 import { useDragSort } from './composables/useDragSort.js'
 
@@ -116,6 +125,7 @@ const toasts = ref([])
 const hasDragged = ref(false)
 const deleteTarget = ref(null)
 const viewTarget = ref(null)
+const renameTarget = ref(null)
 
 const { dragIndex, isDragging, startDrag: _startDrag } = useDragSort(configs, {
   onOrderChange: persistOrder,
@@ -163,6 +173,7 @@ async function deleteConfig(name) {
 }
 
 const confirmRef = ref(null)
+const renameRef = ref(null)
 
 async function confirmDelete(password) {
   const name = deleteTarget.value
@@ -190,9 +201,8 @@ function onUploaded() {
   fetchConfigs()
 }
 
-async function renameConfig(oldName, newName) {
-  const password = prompt('Enter admin password to rename:')
-  if (password === null) return
+async function confirmRename(newName, password) {
+  const oldName = renameTarget.value
   try {
     const res = await fetch(`/api/rename/${encodeURIComponent(oldName)}`, {
       method: 'PUT',
@@ -202,15 +212,17 @@ async function renameConfig(oldName, newName) {
       },
       body: JSON.stringify({ newName }),
     })
-    if (res.status === 403) { toast('Password incorrect', true); return }
-    if (res.status === 409) { toast('Name already exists', true); return }
+    if (res.status === 403) { renameRef.value?.showError('Password incorrect'); return }
+    if (res.status === 409) { renameRef.value?.showError('Name already exists'); return }
     if (!res.ok) throw new Error()
     const { name: finalName } = await res.json()
     const idx = configs.value.findIndex(c => c.name === oldName)
     if (idx !== -1) configs.value[idx] = { ...configs.value[idx], name: finalName }
+    renameTarget.value = null
     toast('Renamed successfully')
   } catch {
     toast('Failed to rename', true)
+    renameTarget.value = null
   }
 }
 
