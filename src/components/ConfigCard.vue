@@ -46,10 +46,34 @@
         <span class="sep">/</span>
         <span>{{ formatDate(config.uploadedAt) }}</span>
       </div>
+      <div class="stats-row">
+        <span class="stat-item" title="预览次数">
+          <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
+            <ellipse cx="7" cy="7" rx="5.5" ry="3.5" stroke="currentColor" stroke-width="1.2"/>
+            <circle cx="7" cy="7" r="1.5" fill="currentColor"/>
+          </svg>
+          {{ stats.view }}
+        </span>
+        <span class="stat-item" title="复制次数">
+          <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
+            <rect x="4" y="4" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/>
+            <path d="M10 4V3a1 1 0 00-1-1H3a1 1 0 00-1 1v6a1 1 0 001 1h1" stroke="currentColor" stroke-width="1.2"/>
+          </svg>
+          {{ stats.copy }}
+        </span>
+        <span class="stat-item" title="下载次数">
+          <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
+            <path d="M7 2v7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+            <path d="M4 7l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2 11.5h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+          {{ stats.save }}
+        </span>
+      </div>
     </div>
 
     <div class="card-actions">
-      <button class="action-btn view-btn" @click.stop="$emit('view', config.name)">
+      <button class="action-btn view-btn" @click.stop="() => { $emit('view', config.name); recordClick('view') }">
         <svg width="11" height="11" viewBox="0 0 14 14" fill="none">
           <ellipse cx="7" cy="7" rx="5.5" ry="3.5" stroke="currentColor" stroke-width="1.2"/>
           <circle cx="7" cy="7" r="1.5" fill="currentColor"/>
@@ -91,7 +115,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 const props = defineProps({
   config: { type: Object, required: true }
@@ -101,6 +125,42 @@ const emit = defineEmits(['delete', 'view', 'rename'])
 
 const copied = ref(false)
 const downloading = ref(false)
+const stats = ref({ view: 0, copy: 0, save: 0 })
+
+const API_BASE = 'https://workers.lxztzp.top'
+
+// 三个固定 UID，分别对应三种操作类型，全局共享
+const ACTION_UID = {
+  view: 'uid-global-view',
+  copy: 'uid-global-copy',
+  save: 'uid-global-save',
+}
+
+async function fetchStats() {
+  const name = props.config.name
+  try {
+    const [v, c, s] = await Promise.all([
+      fetch(`${API_BASE}/click?uid=${ACTION_UID.view}&cardid=${encodeURIComponent(name)}`).then(r => r.json()),
+      fetch(`${API_BASE}/click?uid=${ACTION_UID.copy}&cardid=${encodeURIComponent(name)}`).then(r => r.json()),
+      fetch(`${API_BASE}/click?uid=${ACTION_UID.save}&cardid=${encodeURIComponent(name)}`).then(r => r.json()),
+    ])
+    stats.value = { view: v.count, copy: c.count, save: s.count }
+  } catch { /* silent */ }
+}
+
+async function recordClick(action) {
+  try {
+    const res = await fetch(`${API_BASE}/click`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid: ACTION_UID[action], cardid: props.config.name }),
+    })
+    const data = await res.json()
+    stats.value[action] = data.count
+  } catch { /* silent */ }
+}
+
+onMounted(fetchStats)
 
 const palettes = [
   { from: '#6366f1', to: '#a78bfa' },
@@ -164,11 +224,13 @@ async function copyLink() {
     copied.value = true
     setTimeout(() => { copied.value = false }, 2000)
   }
+  recordClick('copy')
 }
 
 async function download() {
   if (downloading.value) return
   downloading.value = true
+  recordClick('save')
   try {
     const res = await fetch(getDownloadUrl())
     if (!res.ok) throw new Error()
@@ -402,6 +464,27 @@ function formatDate(dateStr) {
 .sep {
   opacity: 0.35;
   font-weight: 300;
+}
+
+.stats-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.stat-item svg {
+  opacity: 0.6;
+  flex-shrink: 0;
 }
 
 .card-actions {
